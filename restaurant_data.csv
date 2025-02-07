@@ -1,0 +1,7 @@
+id,Name,restaurantName,price,distance,time,image
+1,Burger,McDonalds,200,5,"20-25",'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1899&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+2,Pizza,Pizza Hut,300,10,"20-25",'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG0dG8twaWdlfHx8fGVufDB8fHx8fA%3D%3D'
+3,Biryani,Biryani House,400,15,"20-25",'https://images.unsplash.com/photo-1589302168068-964664d93dc0?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG0dG8twaWdlfHx8fGVufDB8fHx8fA%3D%3D'
+4,Sushi,Tokyo Delights,500,12,"35-40",'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?q=80&w=1854&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG0dG8twaWdlfHx8fGVufDB8fHx8fA%3D%3D'
+5,Tacos,Mexican Delight,250,6,"15-20",'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG0dG8twaWdlfHx8fGVufDB8fHx8fA%3D%3D'
+6,Pasta,Italian Kitchen,400,10,"30-35",'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?q=80&w=1780&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG0dG8twaWdlfHx8fGVufDB8fHx8fA%3D%3D'
