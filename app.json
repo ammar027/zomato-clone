@@ -13,7 +13,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -22,16 +24,14 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.madabhi.zomatoclone"
+      "package": "com.madabhi.zomatoclone",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "f4bf7758-63fb-45d0-9566-800c7ec1584c"
-      }
     },
     "plugins": [
       "expo-router",
@@ -42,6 +42,15 @@
           "cameraPermission": "The app needs access to your camera to set your profile picture."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "8f1242a0-0ed4-4769-b28c-7879ce4a2f5e"
+      }
+    },
+    "owner": "ammar001"
   }
 }

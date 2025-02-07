@@ -280,6 +280,7 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     padding: 12,
     backgroundColor: "#fff",
+    height:60,
   },
   categoryButton: {
     paddingHorizontal: 16,
