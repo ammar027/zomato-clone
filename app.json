@@ -24,7 +24,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.madabhi.zomatoclone",
+      "package": "com.ammar001.zomatoclone",
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ]

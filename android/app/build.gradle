@@ -86,9 +86,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.madabhi.zomatoclone'
+    namespace 'com.ammar001.zomatoclone'
     defaultConfig {
-        applicationId 'com.madabhi.zomatoclone'
+        applicationId 'com.ammar001.zomatoclone'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

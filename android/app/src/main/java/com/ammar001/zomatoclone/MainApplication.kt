@@ -1,4 +1,4 @@
-package com.madabhi.zomatoclone
+package com.ammar001.zomatoclone
 
 import android.app.Application
 import android.content.res.Configuration

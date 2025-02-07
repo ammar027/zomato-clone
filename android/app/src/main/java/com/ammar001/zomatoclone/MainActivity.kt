@@ -1,4 +1,4 @@
-package com.madabhi.zomatoclone
+package com.ammar001.zomatoclone
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

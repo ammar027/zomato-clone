@@ -26,7 +26,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="zomato-scheme"/>
-        <data android:scheme="com.madabhi.zomatoclone"/>
+        <data android:scheme="com.ammar001.zomatoclone"/>
       </intent-filter>
     </activity>
   </application>
