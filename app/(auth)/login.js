@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -12,8 +12,10 @@ import {
   KeyboardAvoidingView, 
   Platform,
   SafeAreaView,
-  Dimensions
+  Dimensions,
 } from 'react-native';
+import { LoginButton, AccessToken, Profile, LoginManager } from 'react-native-fbsdk-next';
+import { initializeFacebookSDK } from 'fbsdk.config';
 import { supabase } from '@utils/superbase';
 import { useRouter } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -21,6 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); 
 const AuthScreen = () => {
@@ -31,7 +34,12 @@ const AuthScreen = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [fbLoading, setFbLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    initializeFacebookSDK();
+  }, []);
 
   // Previous image picker functions remain the same
   const pickImage = async () => {
@@ -102,6 +110,43 @@ const AuthScreen = () => {
       throw error;
     }
   };
+
+  const handleFacebookLogin = async () => {
+    try {
+      setLoading(true);
+  
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+      });
+  
+      if (error) throw error;
+  
+      console.log('Facebook login success:', data);
+      router.replace('/(tabs)/home');
+  
+    } catch (error) {
+      console.error('Facebook login error:', error);
+      Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        console.log('No active session found.');
+      } else {
+        console.log('Session found:', data.session);
+      }
+    };
+  
+    checkSession();
+  }, []);
+  
+  
+
+  
 
   const handleAuth = async () => {
     if (loading) return;
@@ -329,6 +374,23 @@ const AuthScreen = () => {
                   <MaterialCommunityIcons name="google" size={20} color="#E23744" />
                   <Text style={styles.socialButtonText}>Google</Text>
                 </TouchableOpacity>
+                
+                <TouchableOpacity 
+      onPress={handleFacebookLogin}
+      disabled={loading}
+      style={{
+        backgroundColor: '#4267B2',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center'
+      }}
+    >
+      {loading ? (
+        <ActivityIndicator color="white" />
+      ) : (
+        <Text style={{ color: 'white' }}>Login with Facebook</Text>
+      )}
+    </TouchableOpacity>
               </View>
 
               <TouchableOpacity 
@@ -548,6 +610,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+    fbButtonContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: 55,
+      marginBottom: 15,
+    },
+    fbButton: {
+      height: 55,
+      width: '100%',
+    },
 });
 
 export default AuthScreen;

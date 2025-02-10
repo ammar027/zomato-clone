@@ -1,62 +1,101 @@
-import { StyleSheet, Text, View, Image, ScrollView, Dimensions, Animated } from "react-native";
-import React, { useRef, useEffect } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  ScrollView,
+  Dimensions,
+  Animated,
+  Pressable,
+} from "react-native";
+import React, { useRef, useEffect, useState } from "react";
 import { Ionicons, FontAwesome, Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { LinearGradient } from 'expo-linear-gradient';
+import CardSlider from "@components/CardSlider";
+import ProfileImage from "@components/ProfileImage/ProfileImage";
+import { supabase } from "@utils/superbase"; // Import Supabase client
 
 const { width } = Dimensions.get("window");
 
 const Header = () => {
   const scrollRef = useRef(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+  const router = useRouter();
 
-  // Auto-scroll effect
+  // Define user state
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    let position = 0;
-    const interval = setInterval(() => {
-      position = (position + 1) % promoImages.length;
-      scrollRef.current?.scrollTo({ x: position * (width * 0.8 + 15), animated: true });
-    }, 6000);
-    return () => clearInterval(interval);
+    checkUser();
   }, []);
+
+  const checkUser = async () => {
+    try {
+      setLoading(true);
+      const { data: { user: userData }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) throw authError;
+      if (!userData) return;
+
+      setUser(userData);
+      await fetchProfile(userData.id);
+    } catch (error) {
+      console.error("Auth error:", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProfile = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, full_name, email, profile_image")
+        .eq("id", userId)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error("Profile fetch error:", error.message);
+    }
+  };
 
   return (
     <View style={styles.mainWrap}>
       {/* Header Section */}
       <View style={styles.headingWrap}>
         <View style={styles.headingCtn}>
-          <Ionicons name="location" size={32} color="#e03546" />
+          <View style={styles.locationIconContainer}>
+            <Feather name="map-pin" size={24} color="#e03546" />
+          </View>
           <View style={styles.headingLocation}>
             <Text style={styles.headingTitle}>Work</Text>
-            <Text style={styles.headingDesc}>Luxuria Business Hub, Enacton Technologies 604</Text>
+            <Text style={styles.headingDesc}>
+              Luxuria Business Hub, Enacton Technologies 604
+            </Text>
           </View>
         </View>
-        <View style={styles.headingProfile}>
-          <Image source={require("@assets/images/profile.png")} style={styles.headingProfileImg} />
-        </View>
+
+        {user && profile && (
+          <Pressable onPress={() => router.push("/profile")} style={styles.profileButton}>
+            <ProfileImage userId={user.id} imageUrl={profile?.profile_image} />
+          </Pressable>
+        )}
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchWrap}>
-        <FontAwesome name="search" size={20} color="#e03546" />
-        <Text style={styles.searchText}>Restaurant name or a dish..</Text>
-        <Feather name="mic" size={20} color="#e03546" />
+        <FontAwesome name="search" size={18} color="#e03546" />
+        <Text style={styles.searchText}>Restaurant name or a dish...</Text>
+        <View style={styles.micIconContainer}>
+          <Feather name="mic" size={18} color="#e03546" />
+        </View>
       </View>
-
-      {/* Card Slider - ScrollView-Based */}
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        style={styles.swipeable}
-        contentContainerStyle={styles.carouselContainer}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: false })}
-      >
-        {promoImages.map((uri, index) => (
-          <View key={index} style={styles.card}>
-            <Image source={{ uri }} style={styles.promoImage} />
-          </View>
-        ))}
-      </ScrollView>
+      <CardSlider images={promoImages} />
 
       <View style={styles.forYou}>
         <Text style={styles.forYouText}>For You</Text>
@@ -65,10 +104,11 @@ const Header = () => {
   );
 };
 
-// Promo Image Data
+
 const promoImages = [
   "https://s3-ap-southeast-1.amazonaws.com/bsy/iportal/images/zomato-banner-change_74B641A1E3AE1100D7015078982A3409.jpg",
   "https://i.pinimg.com/736x/30/74/bc/3074bcb35ab6b33f3ad3222a0a33d7bc.jpg",
+  "https://s3-ap-southeast-1.amazonaws.com/bsy/iportal/images/zomato-banner-change_74B641A1E3AE1100D7015078982A3409.jpg",
   "https://i.pinimg.com/736x/30/74/bc/3074bcb35ab6b33f3ad3222a0a33d7bc.jpg",
 ];
 
@@ -76,103 +116,93 @@ export default Header;
 
 const styles = StyleSheet.create({
   mainWrap: {
-    marginHorizontal: 8,
+    marginHorizontal: 10,
+    marginTop: 2,
   },
   headingWrap: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 16,
   },
   headingCtn: {
     flexDirection: "row",
     alignItems: "center",
-    width: "70%",
+    width: "75%",
+  },
+  locationIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(224, 53, 70, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headingTitle: {
-    marginTop: 15,
-    fontSize: 26,
-    fontWeight: "800",
+    fontSize: 19,
+    fontWeight: "700",
+    color: '#1A1A1A',
   },
   headingLocation: {
-    marginLeft: 5,
+    marginLeft: 12,
+    flex: 1,
   },
-  headingProfile: {
-    borderWidth: 1,
-    borderColor: "black",
-    height: 40,
-    width: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 50,
-    shadowColor: "black",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.8,
-    marginLeft: 10,
+  profileButton: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headingProfileImg: {
-    width: 40,
-    height: 40,
-    borderRadius: 50,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
   },
   headingDesc: {
-    color: "gray",
+    color: "#666",
     fontSize: 14,
-    letterSpacing: 0.8,
+    letterSpacing: 0.3,
   },
   searchWrap: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 15,
     backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 10,
-    elevation: 10,
+    borderRadius: 12,
+    padding: 11,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   searchText: {
-    color: "gray",
+    color: "#666",
     fontWeight: "500",
     fontSize: 14,
-    letterSpacing: 0.8,
-    width: "70%",
+    letterSpacing: 0.3,
+    flex: 1,
+    marginLeft: 12,
   },
+  micIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(224, 53, 70, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
   forYou: {
-    flexDirection: "row",
-    justifyContent: "center",
-    
+    alignItems: "center",
   },
   forYouText: {
     fontSize: 13,
     textTransform: "uppercase",
-    color: "gray",
+    color: "grey",
     letterSpacing: 2,
-  },
-  swipeable: {
-    height: 180,
-    overflow: "hidden",
-    marginVertical: 10,
-  },
-  carouselContainer: {
-    paddingHorizontal: 10,
-  },
-  card: {
-    width: width * 0.8, // Each card takes 80% of screen width
-    height: 160,
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    marginHorizontal: 7.5, // Ensures proper spacing between cards
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  promoImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 15,
-    resizeMode: "cover",
+    fontWeight: "100",
   },
 });

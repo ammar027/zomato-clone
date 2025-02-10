@@ -117,7 +117,7 @@ export default Header;
 const styles = StyleSheet.create({
   mainWrap: {
     marginHorizontal: 10,
-    marginTop: 8,
+    marginTop: 2,
   },
   headingWrap: {
     flexDirection: "row",

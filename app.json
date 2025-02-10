@@ -8,14 +8,16 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "zomato-scheme",
+    "facebookScheme": "fb1651835995724349",
+    "facebookAppId": "1651835995724349",
+    "facebookDisplayName": "Zomato",
+    "facebookAutoInitEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
@@ -25,9 +27,14 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.ammar001.zomatoclone",
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": ["android.permission.RECORD_AUDIO"],
+      "config": {
+        "facebook": {
+          "appId": "1651835995724349",
+          "autoInitEnabled": true,
+          "clientToken": "ed90fc22baea5186c74c61fd291b5ece"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -35,6 +42,18 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "1651835995724349",
+          "clientToken": "ed90fc22baea5186c74c61fd291b5ece",
+          "displayName": "Zomato",
+          "scheme": "fb1651835995724349",
+          "advertiserIDCollectionEnabled": false,
+          "autoLogAppEventsEnabled": false,
+          "isAutoInitEnabled": true
+        }
+      ],
       [
         "expo-image-picker",
         {
