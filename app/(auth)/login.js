@@ -14,7 +14,7 @@ import {
   SafeAreaView,
   Dimensions,
 } from 'react-native';
-import { LoginButton, AccessToken, Profile, LoginManager } from 'react-native-fbsdk-next';
+import { LoginManager, AccessToken, Profile } from 'react-native-fbsdk-next';
 import { initializeFacebookSDK } from 'fbsdk.config';
 import { supabase } from '@utils/superbase';
 import { useRouter } from 'expo-router';
@@ -111,26 +111,164 @@ const AuthScreen = () => {
     }
   };
 
+
   const handleFacebookLogin = async () => {
     try {
-      setLoading(true);
+      setFbLoading(true);
   
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-      });
+      // 1. Request permissions including email explicitly
+      const result = await LoginManager.logInWithPermissions([
+        'public_profile',
+        'email'
+      ]);
+      
+      if (result.isCancelled) {
+        throw new Error('User cancelled the login process');
+      }
   
-      if (error) throw error;
+      const tokenData = await AccessToken.getCurrentAccessToken();
+      if (!tokenData) {
+        throw new Error('Failed to get access token');
+      }
   
-      console.log('Facebook login success:', data);
-      router.replace('/(tabs)/home');
+      // 2. Get Facebook profile data including email
+      const response = await fetch(
+        `https://graph.facebook.com/v13.0/me?fields=id,name,email,picture&access_token=${tokenData.accessToken}`
+      );
+      const fbData = await response.json();
+      
+      if (!fbData) {
+        throw new Error('Failed to get Facebook profile data');
+      }
+  
+      // Check if we got the profile data
+      console.log('Facebook Profile Data:', fbData);
+  
+      // 3. Rest of your existing flow with email from fbData
+      let user;
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('facebook_id', fbData.id)
+        .single();
+  
+      if (!existingUser) {
+        // Create new user with email from Facebook
+        const { data: { user: newUser }, error: signUpError } = await supabase.auth.signUp({
+          email: fbData.email || `${fbData.id}@facebook.com`, // Fallback email if none provided
+          password: `fb_${fbData.id}_${Date.now()}`,
+        });
+  
+        if (signUpError) throw signUpError;
+        user = newUser;
+      } else {
+        // Sign in existing user
+        const { data: { user: existingAuthUser }, error: signInError } = await supabase.auth.signInWithPassword({
+          email: existingUser.email,
+          password: `fb_${fbData.id}_${Date.now()}`,
+        });
+  
+        if (signInError) throw signInError;
+        user = existingAuthUser;
+      }
+  
+      if (!user) throw new Error('Failed to authenticate user');
+  
+      // 4. Process profile image from Facebook data
+      let profileImageUrl = null;
+      if (fbData.picture?.data?.url) {
+        try {
+          const response = await fetch(fbData.picture.data.url);
+          const blob = await response.blob();
+          const base64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(blob);
+          });
+  
+          const fileName = `${user.id}-${Date.now()}.jpg`;
+          const { error: uploadError } = await supabase.storage
+            .from('profiles')
+            .upload(fileName, decode(base64), {
+              contentType: 'image/jpeg',
+              upsert: true,
+            });
+  
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('profiles')
+              .getPublicUrl(fileName);
+            profileImageUrl = publicUrl;
+          }
+        } catch (error) {
+          console.error('Profile image upload error:', error);
+        }
+      }
+  
+      // 5. Upsert user profile with email
+      const { error: upsertError } = await supabase
+        .from('users')
+        .upsert({
+          id: user.id,
+          full_name: fbData.name || '',
+          email: fbData.email || `${fbData.id}@facebook.com`, // Use email from Facebook data
+          profile_image: profileImageUrl,
+          facebook_id: fbData.id,
+          auth_provider: 'facebook',
+          facebook_access_token: tokenData.accessToken,
+          facebook_token_expires_at: new Date(tokenData.expirationTime).toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+  
+      if (upsertError) throw upsertError;
+  
+      Alert.alert('Success', 'Successfully logged in!', [
+        {
+          text: 'OK',
+          onPress: () => router.replace('/(tabs)/home')
+        }
+      ]);
   
     } catch (error) {
       console.error('Facebook login error:', error);
       Alert.alert('Error', error.message);
     } finally {
-      setLoading(false);
+      setFbLoading(false);
     }
   };
+
+// Helper function to process profile image
+const processProfileImage = async (imageURL, userId) => {
+  try {
+    const response = await fetch(imageURL);
+    const blob = await response.blob();
+    const base64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(blob);
+    });
+
+    const fileName = `${userId}-${Date.now()}.jpg`;
+    const { error: uploadError } = await supabase.storage
+      .from('profiles')
+      .upload(fileName, decode(base64), {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('profiles')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Profile image processing error:', error);
+    return null;
+  }
+};
+
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -375,22 +513,21 @@ const AuthScreen = () => {
                   <Text style={styles.socialButtonText}>Google</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity 
-      onPress={handleFacebookLogin}
-      disabled={loading}
-      style={{
-        backgroundColor: '#4267B2',
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center'
-      }}
-    >
-      {loading ? (
-        <ActivityIndicator color="white" />
-      ) : (
-        <Text style={{ color: 'white' }}>Login with Facebook</Text>
-      )}
-    </TouchableOpacity>
+  <TouchableOpacity 
+    style={[styles.socialButton, { backgroundColor: '#4267B2' }]}
+    onPress={handleFacebookLogin}
+    disabled={fbLoading}
+    activeOpacity={0.8}
+  >
+    <MaterialCommunityIcons name="facebook" size={20} color="#fff" />
+    {fbLoading ? (
+      <ActivityIndicator color="#fff" style={{ marginLeft: 10 }} />
+    ) : (
+      <Text style={[styles.socialButtonText, { color: '#fff' }]}>
+        Continue with Facebook
+      </Text>
+    )}
+  </TouchableOpacity>
               </View>
 
               <TouchableOpacity 
