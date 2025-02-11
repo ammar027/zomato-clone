@@ -23,6 +23,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { useAuthRequest } from 'expo-auth-session';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+
 
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); 
@@ -35,7 +43,100 @@ const AuthScreen = () => {
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [fbLoading, setFbLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter();
+
+  
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: '332937312681-7vejdu70dasrq4i7q5eql4v1kk02b6dt.apps.googleusercontent.com',
+      offlineAccess: false, // Changed to false to simplify the flow
+      scopes: ['profile', 'email'] // Explicitly request these scopes
+    });
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+
+      await GoogleSignin.signOut();
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+
+      const signInResult = await GoogleSignin.signIn();
+      console.log('Google Sign In Result:', signInResult);
+
+      // Correct access to nested data structure
+      const userData = signInResult.data.user;
+      const idToken = signInResult.data.idToken;
+
+      if (!userData) {
+        console.error('User data missing from response');
+        throw new Error('Failed to get user information');
+      }
+
+      if (!idToken) {
+        throw new Error('Failed to get ID token');
+      }
+
+      console.log('Successfully got user data:', userData);
+
+      // Sign in with Supabase using the ID token
+      const { data: { user }, error: signInError } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (signInError) {
+        console.error('Supabase sign in error:', signInError);
+        throw signInError;
+      }
+
+      if (!user) {
+        console.error('No user returned from Supabase');
+        throw new Error('Authentication failed');
+      }
+
+      // Process profile image if available
+      let profileImageUrl = null;
+      if (userData.photo) {
+        profileImageUrl = await processProfileImage(
+          userData.photo,
+          user.id
+        );
+      }
+
+      // Update user profile with correct data access
+      const { error: upsertError } = await supabase
+        .from('users')
+        .upsert({
+          id: user.id,
+          full_name: userData.name || '',
+          email: userData.email,
+          profile_image: profileImageUrl,
+          google_id: userData.id,
+          auth_provider: 'google',
+          updated_at: new Date().toISOString(),
+        });
+
+      if (upsertError) {
+        console.error('Profile update error:', upsertError);
+        throw upsertError;
+      }
+
+      // Alert.alert('Success', 'Successfully logged in!', [
+      //   {
+      //     text: 'OK',
+      //     onPress: () => router.replace('/(tabs)/home')
+      //   }
+      // ]);
+
+    } catch (error) {
+      console.error('Google login error:', error);
+      Alert.alert('Error', error.message || 'Something went wrong with Google Sign-In');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   useEffect(() => {
     initializeFacebookSDK();
@@ -141,35 +242,30 @@ const AuthScreen = () => {
         throw new Error('Failed to get Facebook profile data');
       }
   
-      // Check if we got the profile data
       console.log('Facebook Profile Data:', fbData);
   
-      // 3. Rest of your existing flow with email from fbData
       let user;
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('id, email')
-        .eq('facebook_id', fbData.id)
-        .single();
+      // First try to sign in
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: fbData.email,
+        password: `fb_${fbData.id}`,
+      });
   
-      if (!existingUser) {
-        // Create new user with email from Facebook
-        const { data: { user: newUser }, error: signUpError } = await supabase.auth.signUp({
-          email: fbData.email || `${fbData.id}@facebook.com`, // Fallback email if none provided
-          password: `fb_${fbData.id}_${Date.now()}`,
+      if (signInError && signInError.message === 'Invalid login credentials') {
+        // If sign in fails, this is a new user - try to sign up
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: fbData.email,
+          password: `fb_${fbData.id}`,
         });
   
         if (signUpError) throw signUpError;
-        user = newUser;
+        user = signUpData.user;
+      } else if (signInError) {
+        // If it's any other error, throw it
+        throw signInError;
       } else {
-        // Sign in existing user
-        const { data: { user: existingAuthUser }, error: signInError } = await supabase.auth.signInWithPassword({
-          email: existingUser.email,
-          password: `fb_${fbData.id}_${Date.now()}`,
-        });
-  
-        if (signInError) throw signInError;
-        user = existingAuthUser;
+        // Sign in was successful
+        user = signInData.user;
       }
   
       if (!user) throw new Error('Failed to authenticate user');
@@ -205,29 +301,29 @@ const AuthScreen = () => {
         }
       }
   
-      // 5. Upsert user profile with email
+      // 5. Update user profile with latest Facebook data
       const { error: upsertError } = await supabase
         .from('users')
         .upsert({
           id: user.id,
           full_name: fbData.name || '',
-          email: fbData.email || `${fbData.id}@facebook.com`, // Use email from Facebook data
+          email: fbData.email,
           profile_image: profileImageUrl,
           facebook_id: fbData.id,
           auth_provider: 'facebook',
           facebook_access_token: tokenData.accessToken,
           facebook_token_expires_at: new Date(tokenData.expirationTime).toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        }, { onConflict: 'id' });
   
       if (upsertError) throw upsertError;
   
-      Alert.alert('Success', 'Successfully logged in!', [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/(tabs)/home')
-        }
-      ]);
+      // Alert.alert('Success', 'Successfully logged in!', [
+      //   {
+      //     text: 'OK',
+      //     onPress: () => router.replace('/(tabs)/home')
+      //   }
+      // ]);
   
     } catch (error) {
       console.error('Facebook login error:', error);
@@ -237,6 +333,9 @@ const AuthScreen = () => {
     }
   };
 
+
+
+  
 // Helper function to process profile image
 const processProfileImage = async (imageURL, userId) => {
   try {
@@ -335,12 +434,12 @@ const processProfileImage = async (imageURL, userId) => {
           profileImage: profileImageUrl,
         });
 
-        Alert.alert('Success', 'Account created successfully!', [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(tabs)/home')
-          }
-        ]);
+        // Alert.alert('Success', 'Account created successfully!', [
+        //   {
+        //     text: 'OK',
+        //     onPress: () => router.replace('/(tabs)/home')
+        //   }
+        // ]);
       } else {
         // Sign In Flow
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -505,25 +604,33 @@ const processProfileImage = async (imageURL, userId) => {
               </View>
 
               <View style={styles.socialButtonsContainer}>
-                <TouchableOpacity 
-                  style={styles.socialButton}
-                  activeOpacity={0.8}
-                >
-                  <MaterialCommunityIcons name="google" size={20} color="#E23744" />
-                  <Text style={styles.socialButtonText}>Google</Text>
-                </TouchableOpacity>
+      <TouchableOpacity 
+        style={[styles.socialButton, { backgroundColor: '#fff' }]}
+        onPress={handleGoogleLogin}
+        disabled={googleLoading}
+        activeOpacity={0.8}
+      >
+        <MaterialCommunityIcons name="google" size={20} color="#E23744" />
+        {googleLoading ? (
+          <ActivityIndicator color="#E23744" style={{ marginLeft: 10 }} />
+        ) : (
+          <Text style={[styles.socialButtonText, { color: '#1C1C1C' }]}>
+            Continue with Google
+          </Text>
+        )}
+      </TouchableOpacity>
                 
   <TouchableOpacity 
-    style={[styles.socialButton, { backgroundColor: '#4267B2' }]}
+    style={[styles.socialButton, { backgroundColor: '#fff' }]}
     onPress={handleFacebookLogin}
     disabled={fbLoading}
     activeOpacity={0.8}
   >
-    <MaterialCommunityIcons name="facebook" size={20} color="#fff" />
+    <MaterialCommunityIcons name="facebook" size={20} color="#E23744" />
     {fbLoading ? (
-      <ActivityIndicator color="#fff" style={{ marginLeft: 10 }} />
+      <ActivityIndicator color="#E23744" style={{ marginLeft: 10 }} />
     ) : (
-      <Text style={[styles.socialButtonText, { color: '#fff' }]}>
+      <Text style={[styles.socialButtonText, { color: '#1C1C1C' }]}>
         Continue with Facebook
       </Text>
     )}

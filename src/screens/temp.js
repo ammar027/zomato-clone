@@ -46,6 +46,59 @@ const ProfileScreen = () => {
     return true;
   };
 
+
+  //Check Fb User 
+    // const handleFacebookLogin = async () => {
+    //   try {
+    //     setFbLoading(true);
+    
+    //     // Step 1: Trigger Facebook Login
+    //     const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
+    //     if (result.isCancelled) {
+    //       throw new Error('User cancelled the login process');
+    //     }
+    
+    //     // Step 2: Get Facebook Access Token
+    //     const tokenData = await AccessToken.getCurrentAccessToken();
+    //     if (!tokenData) {
+    //       throw new Error('Failed to get access token');
+    //     }
+    
+    //     console.log('Facebook Access Token:', tokenData.accessToken);
+    
+    //     // Step 3: Sign in user with Supabase using the OAuth provider
+    //     const { data, error } = await supabase.auth.signInWithOAuth({
+    //       provider: 'facebook',
+    //       options: {
+    //         redirectTo: 'your-app-scheme://auth', // Optional: Only needed if using deep linking
+    //       },
+    //     });
+    
+    //     if (error) {
+    //       throw error; // Handle sign-in error
+    //     }
+    
+    //     console.log('Successfully logged in:', data);
+    
+    //     Alert.alert('Success', 'Successfully logged in!', [
+    //       {
+    //         text: 'OK',
+    //         onPress: () => router.replace('/(tabs)/home'),
+    //       },
+    //     ]);
+    //   } catch (error) {
+    //     console.error('Facebook login error:', error);
+    //     Alert.alert('Error', error.message);
+    //   } finally {
+    //     setFbLoading(false);
+    //   }
+    // };
+    
+
+
+    
+    
+    
   // Format phone number while typing
   const handlePhoneChange = (text) => {
     // Remove any non-digit characters

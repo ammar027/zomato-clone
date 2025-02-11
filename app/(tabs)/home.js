@@ -20,7 +20,7 @@ const Home = () => {
             <Header />
             <Restaurant />
             <View style={styles.forYou}>
-              <Text style={styles.forYouText}>FEATURED tttttttt</Text>
+              <Text style={styles.forYouText}>FEATURED</Text>
             </View>
           </>
         }
