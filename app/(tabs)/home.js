@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 8,
     backgroundColor: "#fff", // Light background
-    paddingTop:8,
+    paddingTop:39,
   },
   forYou: {
     alignItems: "center",

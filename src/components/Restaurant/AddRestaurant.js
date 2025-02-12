@@ -1,4 +1,3 @@
-// AddRestaurantModal.js
 import React, { useState } from 'react';
 import {
   Modal,
@@ -12,26 +11,50 @@ import {
   Alert,
   ActivityIndicator
 } from 'react-native';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from "@utils/superbase";
 import { Feather } from "@expo/vector-icons";
 import { decode } from 'base64-arraybuffer';
 
+// Validation Schema
+const RestaurantSchema = Yup.object().shape({
+  name: Yup.string()
+    .required('Restaurant name is required')
+    .min(2, 'Name is too short'),
+  cuisine: Yup.string()
+    .required('Cuisine type is required')
+    .min(2, 'Cuisine type is too short'),
+  price: Yup.number()
+    .typeError('Price must be a number')
+    .min(0, 'Price cannot be negative'),
+  delivery_time: Yup.number()
+    .typeError('Delivery time must be a number')
+    .min(1, 'Delivery time must be at least 1 minute')
+    .max(180, 'Delivery time cannot exceed 180 minutes'),
+  distance: Yup.number()
+    .typeError('Distance must be a number')
+    .min(0, 'Distance cannot be negative')
+    .max(50, 'Distance cannot exceed 50km'),
+  offers: Yup.string(),
+});
+
 const AddRestaurantModal = ({ visible, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
-  const [formData, setFormData] = useState({
+
+  const initialValues = {
     name: '',
     cuisine: '',
     price: '',
     delivery_time: '',
     distance: '',
     offers: '',
-  });
+  };
 
   const pickImage = async () => {
     try {
-      // Request permission first
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (status !== 'granted') {
@@ -43,11 +66,10 @@ const AddRestaurantModal = ({ visible, onClose, onSuccess }) => {
         mediaTypes: ImagePicker.MediaTypes,
         allowsEditing: true,
         aspect: [16, 9],
-        quality: 0.8, // Reduced quality for better performance
+        quality: 0.8,
       });
   
       if (!result.canceled && result.assets[0].uri) {
-        console.log('Selected image:', result.assets[0].uri);
         setImage(result.assets[0].uri);
       }
     } catch (error) {
@@ -58,13 +80,11 @@ const AddRestaurantModal = ({ visible, onClose, onSuccess }) => {
 
   const uploadImage = async (uri) => {
     try {
-      // First check if user is authenticated
       const { data: { session }, error: authError } = await supabase.auth.getSession();
       if (authError || !session) {
         throw new Error('Authentication required');
       }
   
-      // Convert image to base64
       const response = await fetch(uri);
       const blob = await response.blob();
       
@@ -74,13 +94,9 @@ const AddRestaurantModal = ({ visible, onClose, onSuccess }) => {
       return new Promise((resolve, reject) => {
         reader.onloadend = async () => {
           try {
-            // Get base64 data
             const base64Data = reader.result.split(',')[1];
-            
-            // Generate filename
             const fileName = `restaurant-${Date.now()}.jpg`;
             
-            // Upload to Supabase storage
             const { error: uploadError } = await supabase.storage
               .from('restaurant_images')
               .upload(fileName, decode(base64Data), {
@@ -89,7 +105,6 @@ const AddRestaurantModal = ({ visible, onClose, onSuccess }) => {
   
             if (uploadError) throw uploadError;
   
-            // Get public URL
             const { data: publicURL } = supabase.storage
               .from('restaurant_images')
               .getPublicUrl(fileName);
@@ -108,31 +123,27 @@ const AddRestaurantModal = ({ visible, onClose, onSuccess }) => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (values, { resetForm }) => {
     try {
       setLoading(true);
   
-      // Validate form
-      if (!formData.name || !formData.cuisine || !image) {
-        Alert.alert('Error', 'Please fill in all required fields and add an image');
+      if (!image) {
+        Alert.alert('Error', 'Please add an image');
         return;
       }
   
-      // Upload image and get URL
       const imageUrl = await uploadImage(image);
-      console.log('Image uploaded successfully:', imageUrl);
-  
-      // Add restaurant to database
+      
       const { data, error } = await supabase
         .from('restaurants')
         .insert([
           {
-            name: formData.name,
-            cuisine: formData.cuisine,
-            price: parseInt(formData.price) || 0,
-            delivery_time: parseInt(formData.delivery_time) || 30,
-            distance: parseFloat(formData.distance) || 0,
-            offers: formData.offers,
+            name: values.name,
+            cuisine: values.cuisine,
+            price: parseInt(values.price) || 0,
+            delivery_time: parseInt(values.delivery_time) || 30,
+            distance: parseFloat(values.distance) || 0,
+            offers: values.offers,
             image: imageUrl,
             rating: 4.0,
             created_by: (await supabase.auth.getUser()).data.user.id
@@ -144,6 +155,8 @@ const AddRestaurantModal = ({ visible, onClose, onSuccess }) => {
       if (error) throw error;
   
       Alert.alert('Success', 'Restaurant added successfully!');
+      resetForm();
+      setImage(null);
       onSuccess();
       onClose();
       
@@ -169,84 +182,116 @@ const AddRestaurantModal = ({ visible, onClose, onSuccess }) => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.form}>
-          <TouchableOpacity 
-            style={styles.imageUpload} 
-            onPress={pickImage}
-          >
-            {image ? (
-              <Image source={{ uri: image }} style={styles.previewImage} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Feather name="image" size={40} color="#666" />
-                <Text style={styles.imagePlaceholderText}>Tap to add image</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+        <Formik
+          initialValues={initialValues}
+          validationSchema={RestaurantSchema}
+          onSubmit={handleSubmit}
+        >
+          {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+            <ScrollView style={styles.form}>
+              <TouchableOpacity 
+                style={styles.imageUpload} 
+                onPress={pickImage}
+              >
+                {image ? (
+                  <Image source={{ uri: image }} style={styles.previewImage} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Feather name="image" size={40} color="#666" />
+                    <Text style={styles.imagePlaceholderText}>Tap to add image</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
 
-          <Text style={styles.label}>Restaurant Name *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.name}
-            onChangeText={(text) => setFormData({...formData, name: text})}
-            placeholder="Enter restaurant name"
-          />
+              <Text style={styles.label}>Restaurant Name *</Text>
+              <TextInput
+                style={[styles.input, touched.name && errors.name && styles.inputError]}
+                value={values.name}
+                onChangeText={handleChange('name')}
+                onBlur={handleBlur('name')}
+                placeholder="Enter restaurant name"
+              />
+              {touched.name && errors.name && (
+                <Text style={styles.errorText}>{errors.name}</Text>
+              )}
 
-          <Text style={styles.label}>Cuisine Type *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.cuisine}
-            onChangeText={(text) => setFormData({...formData, cuisine: text})}
-            placeholder="e.g. North Indian, Chinese"
-          />
+              <Text style={styles.label}>Cuisine Type *</Text>
+              <TextInput
+                style={[styles.input, touched.cuisine && errors.cuisine && styles.inputError]}
+                value={values.cuisine}
+                onChangeText={handleChange('cuisine')}
+                onBlur={handleBlur('cuisine')}
+                placeholder="e.g. North Indian, Chinese"
+              />
+              {touched.cuisine && errors.cuisine && (
+                <Text style={styles.errorText}>{errors.cuisine}</Text>
+              )}
 
-          <Text style={styles.label}>Price for Two</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.price}
-            onChangeText={(text) => setFormData({...formData, price: text})}
-            placeholder="Enter price in ₹"
-            keyboardType="numeric"
-          />
+              <Text style={styles.label}>Price for Two</Text>
+              <TextInput
+                style={[styles.input, touched.price && errors.price && styles.inputError]}
+                value={values.price}
+                onChangeText={handleChange('price')}
+                onBlur={handleBlur('price')}
+                placeholder="Enter price in ₹"
+                keyboardType="numeric"
+              />
+              {touched.price && errors.price && (
+                <Text style={styles.errorText}>{errors.price}</Text>
+              )}
 
-          <Text style={styles.label}>Delivery Time (minutes)</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.delivery_time}
-            onChangeText={(text) => setFormData({...formData, delivery_time: text})}
-            placeholder="e.g. 30"
-            keyboardType="numeric"
-          />
+              <Text style={styles.label}>Delivery Time (minutes)</Text>
+              <TextInput
+                style={[styles.input, touched.delivery_time && errors.delivery_time && styles.inputError]}
+                value={values.delivery_time}
+                onChangeText={handleChange('delivery_time')}
+                onBlur={handleBlur('delivery_time')}
+                placeholder="e.g. 30"
+                keyboardType="numeric"
+              />
+              {touched.delivery_time && errors.delivery_time && (
+                <Text style={styles.errorText}>{errors.delivery_time}</Text>
+              )}
 
-          <Text style={styles.label}>Distance (km)</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.distance}
-            onChangeText={(text) => setFormData({...formData, distance: text})}
-            placeholder="e.g. 2.5"
-            keyboardType="numeric"
-          />
+              <Text style={styles.label}>Distance (km)</Text>
+              <TextInput
+                style={[styles.input, touched.distance && errors.distance && styles.inputError]}
+                value={values.distance}
+                onChangeText={handleChange('distance')}
+                onBlur={handleBlur('distance')}
+                placeholder="e.g. 2.5"
+                keyboardType="numeric"
+              />
+              {touched.distance && errors.distance && (
+                <Text style={styles.errorText}>{errors.distance}</Text>
+              )}
 
-          <Text style={styles.label}>Offers</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.offers}
-            onChangeText={(text) => setFormData({...formData, offers: text})}
-            placeholder="e.g. 50% OFF up to ₹100"
-          />
+              <Text style={styles.label}>Offers</Text>
+              <TextInput
+                style={[styles.input, touched.offers && errors.offers && styles.inputError]}
+                value={values.offers}
+                onChangeText={handleChange('offers')}
+                onBlur={handleBlur('offers')}
+                placeholder="e.g. 50% OFF up to ₹100"
+              />
+              {touched.offers && errors.offers && (
+                <Text style={styles.errorText}>{errors.offers}</Text>
+              )}
 
-          <TouchableOpacity 
-            style={styles.submitButton}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.submitButtonText}>Add Restaurant</Text>
-            )}
-          </TouchableOpacity>
-        </ScrollView>
+              <TouchableOpacity 
+                style={styles.submitButton}
+                onPress={handleSubmit}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Add Restaurant</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          )}
+        </Formik>
       </View>
     </Modal>
   );
@@ -305,8 +350,16 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 8,
     fontSize: 16,
+  },
+  inputError: {
+    borderColor: '#E03546',
+  },
+  errorText: {
+    color: '#E03546',
+    fontSize: 12,
+    marginBottom: 16,
   },
   submitButton: {
     backgroundColor: '#E03546',
