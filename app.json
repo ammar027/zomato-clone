@@ -17,9 +17,30 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "SKAdNetworkItems": [
+          {
+            "SKAdNetworkIdentifier": "v9wttpbfk9.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "n38lu8286q.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "v9wttpbfk9.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "n38lu8286q.skadnetwork"
+          }
+        ]
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,14 +48,20 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.ammar001.zomatoclone",
-      "permissions": ["android.permission.RECORD_AUDIO"],
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET"
+      ],
       "config": {
         "facebook": {
           "appId": "1651835995724349",
           "autoInitEnabled": true,
           "clientToken": "ed90fc22baea5186c74c61fd291b5ece"
         }
-      }
+      },
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -70,6 +97,11 @@
         "projectId": "8f1242a0-0ed4-4769-b28c-7879ce4a2f5e"
       }
     },
-    "owner": "ammar001"
+    "owner": "ammar001",
+    "updates": {
+      "url": "https://u.expo.dev/8f1242a0-0ed4-4769-b28c-7879ce4a2f5e",
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    }
   }
 }
