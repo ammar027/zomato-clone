@@ -106,10 +106,10 @@ const Header = () => {
 
 
 const promoImages = [
-  "https://s3-ap-southeast-1.amazonaws.com/bsy/iportal/images/zomato-banner-change_74B641A1E3AE1100D7015078982A3409.jpg",
-  "https://i.pinimg.com/736x/30/74/bc/3074bcb35ab6b33f3ad3222a0a33d7bc.jpg",
-  "https://s3-ap-southeast-1.amazonaws.com/bsy/iportal/images/zomato-banner-change_74B641A1E3AE1100D7015078982A3409.jpg",
-  "https://i.pinimg.com/736x/30/74/bc/3074bcb35ab6b33f3ad3222a0a33d7bc.jpg",
+  "https://xvhopevvhbdjcpwrlanc.supabase.co/storage/v1/object/public/myassets//zomato-banner-change_74B641A1E3AE1100D7015078982A3409.jpg",
+  "https://xvhopevvhbdjcpwrlanc.supabase.co/storage/v1/object/public/myassets//3074bcb35ab6b33f3ad3222a0a33d7bc%20(1).jpg",
+  "https://xvhopevvhbdjcpwrlanc.supabase.co/storage/v1/object/public/myassets//zomato-banner-change_74B641A1E3AE1100D7015078982A3409.jpg",
+  "https://xvhopevvhbdjcpwrlanc.supabase.co/storage/v1/object/public/myassets//3074bcb35ab6b33f3ad3222a0a33d7bc%20(1).jpg",
 ];
 
 export default Header;
@@ -137,6 +137,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(224, 53, 70, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 0.5,
+    borderColor: '#cccccc',
   },
   headingTitle: {
     fontSize: 19,
@@ -170,13 +172,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
     borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: '#ededed',
     padding: 11,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 2,
+    marginHorizontal:5,
   },
   searchText: {
     color: "#666",
@@ -203,6 +208,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     color: "grey",
     letterSpacing: 2,
-    fontWeight: "100",
+    fontWeight: "400",
   },
 });

@@ -460,7 +460,7 @@ const processProfileImage = async (imageURL, userId) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -472,7 +472,7 @@ const processProfileImage = async (imageURL, userId) => {
           bounces={false}
         >
           <LinearGradient
-            colors={['#E23744', '#E23744', '#fff']}
+            colors={['#E23744', '#E23744','#e34b56','#e34b56', '#e8acb0']}
             style={styles.gradientHeader}
           >
             <View style={styles.headerSection}>
@@ -666,7 +666,6 @@ const processProfileImage = async (imageURL, userId) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#E23744',
   },
   keyboardView: {
     flex: 1,
@@ -675,7 +674,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gradientHeader: {
-    height: SCREEN_HEIGHT * 0.25,
+    height: SCREEN_HEIGHT * 0.35,
   },
   headerSection: {
     height: '100%',
@@ -704,11 +703,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1C1C1C',
     marginBottom: 8,
+    left:10,
   },
   subtitle: {
     fontSize: 16,
     color: '#8A8A8A',
     marginBottom: 30,
+    left:10,
   },
   imageContainer: {
     alignItems: 'center',

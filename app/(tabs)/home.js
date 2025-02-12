@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, FlatList, Platform } from "react-native";
+import { View, Text, StyleSheet, FlatList, Platform, SafeAreaViewBase } from "react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@components/Header/Header";
@@ -13,7 +13,7 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style="treansprent" />
       <FlatList
         ListHeaderComponent={
           <>
@@ -47,8 +47,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 8,
-    backgroundColor: "#fff", // Light background
-    paddingTop:39,
+    backgroundColor: "#fff",
+    paddingTop:39, 
   },
   forYou: {
     alignItems: "center",
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     color: "grey",
     letterSpacing: 2,
-    fontWeight: "100",
+    fontWeight: "400",
   },
   listContent: {
     paddingBottom: Platform.OS === "web" ? 50 : 20,

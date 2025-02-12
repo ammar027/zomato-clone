@@ -8,6 +8,7 @@ import * as NavigationBar from "expo-navigation-bar";
 
 NavigationBar.setPositionAsync("absolute");
 NavigationBar.setBackgroundColorAsync("#ffffff01");
+NavigationBar.setButtonStyleAsync('dark');
 
 export default function IndexPage() {
   useEffect(() => {
@@ -36,6 +37,5 @@ export default function IndexPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E03546',
   },
 });

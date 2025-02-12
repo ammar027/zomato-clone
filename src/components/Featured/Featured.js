@@ -46,6 +46,8 @@ const styles = StyleSheet.create({
         elevation: 5,
         backgroundColor: '#fff',
         marginHorizontal: 8,
+        borderWidth: 0.5,
+        borderColor: '#cccccc',
     },
     bgImages: {
         height: 220,

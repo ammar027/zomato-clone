@@ -14,6 +14,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@utils/superbase";
 import { Feather, MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import AddRestaurantModal from "@components/Restaurant/AddRestaurant";
+import { StatusBar } from "expo-status-bar";
 
 const { width } = Dimensions.get("window");
 
@@ -170,6 +171,7 @@ const Restaurant = () => {
   
 
   const renderCategories = () => (
+    <View style={styles.catcon}>
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -198,6 +200,7 @@ const Restaurant = () => {
         </TouchableOpacity>
       ))}
     </ScrollView>
+    </View>
   );
 
   if (loading) {
@@ -210,6 +213,7 @@ const Restaurant = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" backgroundColor="#fff" />
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Popular Restaurants</Text>
         <View style={styles.headerButtons}>
@@ -254,11 +258,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+    paddingTop:55,
+  },
+  catcon: {
+    padding:1,
   },
   headerTitle: {
     fontSize: 20,
@@ -301,10 +309,12 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 12,
+    paddingHorizontal:15,
   },
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
+    
     marginBottom: 16,
     elevation: 3,
     shadowColor: "#000",
